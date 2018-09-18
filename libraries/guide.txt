@@ -1,0 +1,162 @@
+                  GameBoy Library Guidelines V1.3
+                  -------------------------------
+
+  These are meant to be modular, coherent libraries that
+ will work together towards a programming project. They
+ are specifically geared towards the RGBDS assembler
+ package for GameBoy written by Carsten Sorensen.
+
+
+ file extensions
+ ---------------
+
+  *.asm - Files containing assembly code.
+
+          (So far the alternatives to this extension are:
+
+           .z80 - But the GameBoy doesn't really contain a z80.
+           .gba - Stands for Game Boy Assembly.
+           .gal - Stands for Gameboy Assembly Langauge.
+
+           I'm using .asm because no one has really voiced an
+           opinion on this. These other extensions would be more
+           clear I'm sure. Possibly no one really has an opinion
+           or preference on this from the feedback so far.)
+
+  *.bin - Raw binary include files.
+  *.gb  - Final GB rom image code.
+  *.inc - Defines or Macros include files.
+  *.lnk - Link instructions for linker.
+  *.obj - Compiled code before linking.
+
+
+ subroutine prefixes
+ -------------------
+
+   In an attempt to be as modular as possible, the following subroutine
+  prefixes are suggested as a means of organizing code and data into
+  seperate categories.
+
+  add - addition routines
+  bug - debug related code (i.e. bug_DisplayRegisters)
+  div - divide routines (i.e. div_HLDE_BC_DE_rBC)
+  dly - delay for X seconds or milliseconds
+  chr - character set or font (i.e. chr_IBMPC)
+  grf - simple graphics (char set or char mem) manipulation (i.e. grf_LineDraw)
+  lcd - screen (but not sprite or graphics) related (i.e. lcd_WaitVRAM)
+  pad - keypad routines
+  pan - map panning routines
+  rev - revision macros  (i.e. rev_Check_hardware_inc)
+  sio - serial related (short for Serial Input/Output)
+  snd - sound related
+  spr - sprite related code
+  sub - subtraction routines
+  tab - data tables
+  mem - memory copy, memory set, or bank jump/calls
+  mul - multiply routines (i.e. mul_HL_DE_HLDE)
+  zip - compression/decompression code
+
+
+ Math assembly files
+ -------------------
+
+   The following file notation & function names were chosen to
+  make math file & function names predictable. If you don't
+  want to use a 16 char function name as in the first example
+  then one of the first lines in your code could be:
+
+    divide equs "DivHLDE_BC_DE_rBCu"
+
+  +--------- Signed or Unsigned
+  | +-+-+--- Smallest values to the left
+  | | | |+-- Revision (a,b,c,d,etc.)
+  | | | ||
+  V V V VV
+  u161632a.asm  - Unsigned math:
+
+                   MulDE_HL_BCDEu::      <---- function name
+
+                         BCDE = DE * HL
+
+  s080816a.asm  - Signed math:
+
+                   MulB_C_DEs::
+
+                         B * C = DE
+
+  u161632a.asm  - Unsigned math:
+
+                   DivHLDE_DE_BC_rDEu::
+
+                         HLDE / DE = BC, DE = remainder
+
+  u081632a.asm  - Unsigned math:
+
+                   DivHLDE_B_DEu::
+
+                         HLDE / B = DE
+
+
+ Code Programming & Structure
+ ----------------------------
+
+ Compiler commands are usually entered in all upper
+case to easily distinguish them from code to be
+compiled.
+
+ Defines are usually entered in all upper case to
+easily distinguish them from ram variables.
+
+ Code libraries are written, whenever possible, to be
+compileable as stand-alone .obj files OR to be included
+into existing code. Careful library design usually makes
+this possible. It is assumed a code library can be used
+either way unless commented otherwise.
+
+ The current code libraries make the following assumptions:
+
+1. All code resides in the section HOME. Code in banks
+  is not currently an option with these libraries.
+
+2. The code libraries must be included (if included instead
+  of compiled standalone) between sections. The reasoning
+  here is that currently code libs have free control over
+  changing the section without regard to restoring the
+  last section state active before the include operation.
+
+
+Include defines file structure
+------------------------------
+
+ Include define files that are designed to be used with
+standalone code or include code will tend to be included
+twice or more because of the compile process causing a
+compile error. This is why a compile check test is helpful.
+
+  For example, Let's say we have a code file that can be
+ compiled and linked with other code. Let's say this file
+ accesses hardware as well. We would need to include
+ "hardware.inc" somewhere in this standalone code file
+ in order for it to compile.
+
+  Let's say we decided to use this standalone code file
+ as an include code file for a larger project. If this
+ larger project accesses hardware then it's main file
+ will include "hardware.inc". It will have to do this
+ because it does not and should not assume that an
+ include file has already included "hardware.inc".
+ If this project includes the standalone code as well
+ then due to nesting "hardware.inc" will be included again.
+ This will cause a compile error.
+
+  The solution? Add a compiler IF statement to see if
+ an include define file has already been included once
+ somewhere in the compile process. If so, the IF statement
+ will prevent it from occuring any more times. This
+ technique is often used in C programming libraries.
+
+  Next it is helpful to warn the user if the define
+ include file present is outdated for the software
+ currently being compiled. This can be done with a
+ "CheckRev" macro. See any include define file for
+ an example.
